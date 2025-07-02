@@ -39,55 +39,13 @@ const NewsAnalysis = () => {
   const [stockName, setStockName] = useState("");
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<AnalysisResult | null>(null);
+  const [error, setError] = useState<string | null>(null);
   const { toast } = useToast();
 
-  const getMockData = (stockName: string): AnalysisResult => {
-    const currentPrice = Math.random() * 1000 + 50;
-    const changePercent = (Math.random() - 0.5) * 10;
-    
-    return {
-      stock_name: stockName,
-      stock_symbol: stockName.toUpperCase().substring(0, 4),
-      current_price: currentPrice,
-      change_percent: changePercent,
-      trend: changePercent > 1 ? "Bullish" : changePercent < -1 ? "Bearish" : "Neutral",
-      reason: `Based on recent market analysis and news sentiment for ${stockName}, we observe mixed signals in the market.`,
-      news_summaries: [
-        {
-          title: `${stockName} Reports Strong Quarterly Earnings`,
-          summary: `${stockName} has exceeded analyst expectations with robust revenue growth and improved profit margins this quarter.`,
-          sentiment: "positive",
-          score: 0.8
-        },
-        {
-          title: `Market Volatility Affects ${stockName} Trading`,
-          summary: `Recent market uncertainty has led to increased volatility in ${stockName} stock price movements.`,
-          sentiment: "neutral",
-          score: 0.1
-        },
-        {
-          title: `Analysts Upgrade ${stockName} Price Target`,
-          summary: `Several major investment firms have raised their price targets for ${stockName} citing strong fundamentals.`,
-          sentiment: "positive",
-          score: 0.9
-        }
-      ],
-      historical_data: {
-        current_price: currentPrice,
-        change_percent: changePercent,
-        percent_growth: Math.random() * 200 - 50,
-        volatility: Math.random() * 50 + 10,
-        highest_price: Math.random() * 1200 + 100,
-        lowest_price: Math.random() * 100 + 20,
-        initial_price: Math.random() * 500 + 30
-      }
-    };
-  };
-
   const safeToFixed = (value: number | string | undefined, decimals: number = 2): string => {
-    if (value === undefined || value === null) return "N/A";
+    if (value === undefined || value === null) return "0.00";
     const num = typeof value === 'string' ? parseFloat(value) : value;
-    return isNaN(num) ? "N/A" : num.toFixed(decimals);
+    return isNaN(num) ? "0.00" : num.toFixed(decimals);
   };
 
   const safeNumber = (value: number | string | undefined): number => {
@@ -107,8 +65,12 @@ const NewsAnalysis = () => {
     }
 
     setLoading(true);
+    setError(null);
+    setResult(null);
     
     try {
+      console.log(`Attempting news analysis for: ${stockName}`);
+      
       const response = await fetch('http://localhost:5000/api/news-analysis', {
         method: 'POST',
         headers: {
@@ -117,13 +79,22 @@ const NewsAnalysis = () => {
         body: JSON.stringify({ stock_name: stockName }),
       });
 
+      console.log(`Response status: ${response.status}`);
+
       if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
+        const errorText = await response.text();
+        console.error(`API request failed: ${response.status} - ${errorText}`);
+        throw new Error(`Server error: ${response.status}`);
       }
 
       const data = await response.json();
+      console.log('Received API data:', data);
       
-      // Ensure numeric values are properly converted
+      if (data.error) {
+        throw new Error(data.error);
+      }
+
+      // Ensure all numeric values are properly handled
       const processedData = {
         ...data,
         current_price: safeNumber(data.current_price),
@@ -146,17 +117,14 @@ const NewsAnalysis = () => {
         title: "Analysis Complete",
         description: `Successfully analyzed ${stockName}`,
       });
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error analyzing stock:', error);
-      
-      // Use mock data when API fails
-      const mockData = getMockData(stockName);
-      setResult(mockData);
+      setError(error.message || 'Failed to analyze stock. Please check if the backend server is running.');
       
       toast({
-        title: "Using Demo Data",
-        description: "Backend unavailable, showing demo analysis data",
-        variant: "default",
+        title: "Analysis Failed",
+        description: error.message || 'Backend server unavailable',
+        variant: "destructive",
       });
     } finally {
       setLoading(false);
@@ -224,6 +192,18 @@ const NewsAnalysis = () => {
               <CardContent className="flex items-center justify-center py-8">
                 <Loader2 className="w-8 h-8 animate-spin text-brand-primary mr-3" />
                 <p className="text-muted-foreground">Analyzing news sentiment...</p>
+              </CardContent>
+            </Card>
+          )}
+
+          {error && (
+            <Card className="bg-card border-border mb-8">
+              <CardContent className="flex items-center justify-center py-8">
+                <div className="text-center">
+                  <p className="text-red-400 text-lg font-semibold mb-2">Analysis Failed</p>
+                  <p className="text-muted-foreground">{error}</p>
+                  <p className="text-muted-foreground text-sm mt-2">Please ensure the backend server is running and try again.</p>
+                </div>
               </CardContent>
             </Card>
           )}

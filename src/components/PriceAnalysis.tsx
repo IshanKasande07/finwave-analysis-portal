@@ -22,40 +22,21 @@ const PriceAnalysis = () => {
   const [stockSymbol, setStockSymbol] = useState("");
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<PredictionResult | null>(null);
+  const [error, setError] = useState<string | null>(null);
   const [timeframe, setTimeframe] = useState("D");
   const [chartType, setChartType] = useState("candlestick");
   const { toast } = useToast();
 
   const safeToFixed = (value: number | string | undefined, decimals: number = 2): string => {
-    if (value === undefined || value === null) return "N/A";
+    if (value === undefined || value === null) return "0.00";
     const num = typeof value === 'string' ? parseFloat(value) : value;
-    return isNaN(num) ? "N/A" : num.toFixed(decimals);
+    return isNaN(num) ? "0.00" : num.toFixed(decimals);
   };
 
   const safeNumber = (value: number | string | undefined): number => {
     if (value === undefined || value === null) return 0;
     const num = typeof value === 'string' ? parseFloat(value) : value;
     return isNaN(num) ? 0 : num;
-  };
-
-  const getMockData = (stockSymbol: string): PredictionResult => {
-    const currentPrice = Math.random() * 1000 + 50;
-    const percentageChange = (Math.random() - 0.5) * 10;
-    const trend = percentageChange > 1 ? "Bullish" : percentageChange < -1 ? "Bearish" : "Neutral";
-    
-    return {
-      stock: stockSymbol.toUpperCase(),
-      current_price: currentPrice,
-      percentage_change: percentageChange,
-      trend: trend,
-      reason: trend === "Bullish" 
-        ? "Strong uptrend due to recent buying pressure and positive market sentiment."
-        : trend === "Bearish" 
-        ? "Downtrend observed, possibly due to market corrections and selling pressure."
-        : "Market is consolidating, waiting for direction with balanced buying and selling.",
-      candle_pattern: percentageChange > 0 ? "Bullish Engulfing" : percentageChange < 0 ? "Bearish Harami" : "Doji",
-      color: percentageChange >= 0 ? "positive" : "negative"
-    };
   };
 
   const predictStock = async () => {
@@ -69,8 +50,12 @@ const PriceAnalysis = () => {
     }
 
     setLoading(true);
+    setError(null);
+    setResult(null);
     
     try {
+      console.log(`Attempting price analysis for: ${stockSymbol}`);
+      
       const response = await fetch('http://localhost:5000/api/price-analysis', {
         method: 'POST',
         headers: {
@@ -79,19 +64,19 @@ const PriceAnalysis = () => {
         body: JSON.stringify({ stock_symbol: stockSymbol }),
       });
 
+      console.log(`Response status: ${response.status}`);
+
       if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
+        const errorText = await response.text();
+        console.error(`API request failed: ${response.status} - ${errorText}`);
+        throw new Error(`Server error: ${response.status}`);
       }
 
       const data = await response.json();
+      console.log('Received API data:', data);
       
       if (data.error) {
-        toast({
-          title: "Error",
-          description: data.error,
-          variant: "destructive",
-        });
-        return;
+        throw new Error(data.error);
       }
 
       // Process the data to ensure numeric values
@@ -107,17 +92,14 @@ const PriceAnalysis = () => {
         title: "Prediction Complete",
         description: `Successfully analyzed ${stockSymbol.toUpperCase()}`,
       });
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error analyzing stock:', error);
-      
-      // Use mock data when API fails
-      const mockData = getMockData(stockSymbol);
-      setResult(mockData);
+      setError(error.message || 'Failed to analyze stock. Please check if the backend server is running.');
       
       toast({
-        title: "Using Demo Data",
-        description: "Backend unavailable, showing demo prediction data",
-        variant: "default",
+        title: "Analysis Failed",
+        description: error.message || 'Backend server unavailable',
+        variant: "destructive",
       });
     } finally {
       setLoading(false);
@@ -173,6 +155,18 @@ const PriceAnalysis = () => {
                     <div className="w-3 h-3 bg-green-500 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
                   </div>
                   <p className="text-muted-foreground">Analyzing market data and generating predictions...</p>
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
+          {error && (
+            <Card className="bg-card border-border mb-8">
+              <CardContent className="flex items-center justify-center py-8">
+                <div className="text-center">
+                  <p className="text-red-400 text-lg font-semibold mb-2">Prediction Failed</p>
+                  <p className="text-muted-foreground">{error}</p>
+                  <p className="text-muted-foreground text-sm mt-2">Please ensure the backend server is running and try again.</p>
                 </div>
               </CardContent>
             </Card>
@@ -264,6 +258,7 @@ const PriceAnalysis = () => {
                       className="w-full h-full rounded-lg"
                       frameBorder="0"
                       scrolling="no"
+                      allowtransparency="true"
                     />
                   </div>
                 </CardContent>

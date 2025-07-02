@@ -25,55 +25,8 @@ const SentimentAnalysis = () => {
   const [stockName, setStockName] = useState("");
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<SentimentResult | null>(null);
+  const [error, setError] = useState<string | null>(null);
   const { toast } = useToast();
-
-  const getMockData = (stockName: string): SentimentResult => {
-    const mockPosts = [
-      {
-        text: `Just bought more ${stockName} shares. This company is solid and has great fundamentals. Long term hold for sure!`,
-        sentiment: "positive",
-        score: 0.85
-      },
-      {
-        text: `${stockName} stock looking bearish today. Market volatility is affecting the price negatively.`,
-        sentiment: "negative",
-        score: 0.72
-      },
-      {
-        text: `${stockName} announces new product launch. Innovation continues to drive growth and market expansion.`,
-        sentiment: "positive",
-        score: 0.91
-      },
-      {
-        text: `Market uncertainty is affecting ${stockName}. Trading sideways for now, waiting for clear direction.`,
-        sentiment: "neutral",
-        score: 0.05
-      },
-      {
-        text: `${stockName} partnerships with major companies announced. This could be a real game changer for the industry.`,
-        sentiment: "positive",
-        score: 0.88
-      }
-    ];
-
-    const sentimentMapping = { "positive": 1, "neutral": 0, "negative": -1 };
-    const totalScore = mockPosts.reduce((sum, item) => sum + sentimentMapping[item.sentiment as keyof typeof sentimentMapping] * item.score, 0);
-    const avgScore = totalScore / mockPosts.length;
-    
-    const overallSentiment = avgScore > 0.3 ? "Bullish" : avgScore < -0.3 ? "Bearish" : "Neutral";
-    
-    return {
-      stock_name: stockName,
-      trend: overallSentiment,
-      reason: overallSentiment === "Bullish" 
-        ? "Positive sentiment observed across social media platforms, indicating market optimism and strong investor confidence."
-        : overallSentiment === "Bearish" 
-        ? "Negative sentiment detected in social discussions, reflecting market concerns and cautious investor sentiment."
-        : "Mixed sentiment signals from social media analysis show a balanced outlook with neutral market sentiment.",
-      overall_score: avgScore,
-      results: mockPosts
-    };
-  };
 
   const analyzeSentiment = async () => {
     if (!stockName.trim()) {
@@ -86,43 +39,37 @@ const SentimentAnalysis = () => {
     }
 
     setLoading(true);
+    setError(null);
+    setResult(null);
     
     try {
-      console.log(`Attempting to analyze sentiment for: ${stockName}`);
+      console.log(`Attempting sentiment analysis for: ${stockName}`);
       
-      const response = await fetch('http://localhost:5000/api/sentiment-analysis', {
-        method: 'POST',
+      // Try the correct endpoint first
+      const response = await fetch(`http://localhost:5000/api/sentiment/${stockName}`, {
+        method: 'GET',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ stock_name: stockName }),
       });
 
       console.log(`Response status: ${response.status}`);
 
       if (!response.ok) {
-        console.error(`API request failed with status: ${response.status}`);
-        throw new Error(`HTTP error! status: ${response.status}`);
+        const errorText = await response.text();
+        console.error(`API request failed: ${response.status} - ${errorText}`);
+        throw new Error(`Server error: ${response.status}`);
       }
 
       const data = await response.json();
       console.log('Received API data:', data);
       
       if (data.error) {
-        console.error('API returned error:', data.error);
-        toast({
-          title: "API Error",
-          description: data.error,
-          variant: "destructive",
-        });
-        // Fall back to mock data
-        const mockData = getMockData(stockName);
-        setResult(mockData);
-        return;
+        throw new Error(data.error);
       }
 
       // Check if we received actual Reddit data
-      if (data.results && data.results.length > 0) {
+      if (data.results && Array.isArray(data.results) && data.results.length > 0) {
         console.log('Using real Reddit API data');
         setResult(data);
         
@@ -131,28 +78,16 @@ const SentimentAnalysis = () => {
           description: `Successfully analyzed social sentiment for ${stockName} using Reddit API`,
         });
       } else {
-        console.log('No Reddit data received, using fallback');
-        // If no results from Reddit API, use mock data but inform user
-        const mockData = getMockData(stockName);
-        setResult(mockData);
-        
-        toast({
-          title: "Limited Data Available",
-          description: "Reddit API returned no results, showing demo sentiment data",
-          variant: "default",
-        });
+        throw new Error('No sentiment data available from Reddit API');
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error analyzing sentiment:', error);
-      
-      // Use mock data when API fails
-      const mockData = getMockData(stockName);
-      setResult(mockData);
+      setError(error.message || 'Failed to analyze sentiment. Please check if the backend server is running.');
       
       toast({
-        title: "Using Demo Data",
-        description: "Reddit API unavailable, showing demo sentiment data",
-        variant: "default",
+        title: "Analysis Failed",
+        description: error.message || 'Backend server unavailable',
+        variant: "destructive",
       });
     } finally {
       setLoading(false);
@@ -194,7 +129,7 @@ const SentimentAnalysis = () => {
                 Analyze Social Media Sentiment
               </CardTitle>
               <CardDescription className="text-muted-foreground">
-                Analyze sentiment from Reddit, Twitter, and other social platforms for stock insights
+                Analyze sentiment from Reddit for stock insights using real API data
               </CardDescription>
             </CardHeader>
             <CardContent>
@@ -226,8 +161,20 @@ const SentimentAnalysis = () => {
                     <div className="w-12 h-12 border-4 border-brand-accent/20 border-t-brand-accent rounded-full animate-spin"></div>
                     <MessageSquare className="w-6 h-6 text-brand-accent absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2" />
                   </div>
-                  <p className="text-muted-foreground">Scanning social media platforms...</p>
-                  <p className="text-muted-foreground text-sm">Analyzing Reddit, Twitter, and StockTwits</p>
+                  <p className="text-muted-foreground">Scanning Reddit for real sentiment data...</p>
+                  <p className="text-muted-foreground text-sm">Analyzing r/stocks, r/investing, and r/StockMarket</p>
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
+          {error && (
+            <Card className="bg-card border-border mb-8">
+              <CardContent className="flex items-center justify-center py-8">
+                <div className="text-center">
+                  <p className="text-red-400 text-lg font-semibold mb-2">Sentiment Analysis Failed</p>
+                  <p className="text-muted-foreground">{error}</p>
+                  <p className="text-muted-foreground text-sm mt-2">Please ensure the backend server is running and Reddit API is configured.</p>
                 </div>
               </CardContent>
             </Card>
@@ -257,8 +204,8 @@ const SentimentAnalysis = () => {
                       </p>
                     </div>
                     <div className="text-center p-4 bg-muted rounded-lg">
-                      <p className="text-muted-foreground text-sm mb-1">Data Sources</p>
-                      <p className="text-lg font-semibold text-brand-primary">Reddit, Twitter, StockTwits</p>
+                      <p className="text-muted-foreground text-sm mb-1">Data Source</p>
+                      <p className="text-lg font-semibold text-brand-primary">Reddit API</p>
                     </div>
                   </div>
                   <div className="mt-6 p-4 bg-muted rounded-lg">
@@ -270,9 +217,9 @@ const SentimentAnalysis = () => {
 
               <Card className="bg-card border-border">
                 <CardHeader>
-                  <CardTitle className="text-foreground">Recent Social Media Sentiments</CardTitle>
+                  <CardTitle className="text-foreground">Real Reddit Sentiment Data</CardTitle>
                   <CardDescription className="text-muted-foreground">
-                    Latest posts and comments from various social platforms
+                    Latest posts and comments from Reddit stock communities
                   </CardDescription>
                 </CardHeader>
                 <CardContent>
@@ -280,7 +227,7 @@ const SentimentAnalysis = () => {
                     {result.results.map((item, index) => (
                       <div key={index} className="border-l-4 border-brand-accent/30 pl-4 py-3 bg-muted rounded-r-lg">
                         <div className="flex items-start justify-between mb-2">
-                          <span className="text-sm text-muted-foreground">Post #{index + 1}</span>
+                          <span className="text-sm text-muted-foreground">Reddit Post #{index + 1}</span>
                           <div className="flex items-center gap-2">
                             {getSentimentIcon(item.sentiment)}
                             <Badge className={getSentimentColor(item.sentiment)}>
