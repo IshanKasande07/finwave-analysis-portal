@@ -67,6 +67,9 @@ const PriceAnalysis = () => {
       console.log(`Response status: ${response.status}`);
 
       if (!response.ok) {
+        if (response.status === 500) {
+          throw new Error('Backend server error. Please check if the Flask server is running properly.');
+        }
         const errorText = await response.text();
         console.error(`API request failed: ${response.status} - ${errorText}`);
         throw new Error(`Server error: ${response.status}`);
@@ -94,11 +97,19 @@ const PriceAnalysis = () => {
       });
     } catch (error: any) {
       console.error('Error analyzing stock:', error);
-      setError(error.message || 'Failed to analyze stock. Please check if the backend server is running.');
+      let errorMessage = 'Failed to analyze stock. Please check if the backend server is running.';
+      
+      if (error.message.includes('fetch')) {
+        errorMessage = 'Cannot connect to backend server. Please ensure the Flask server is running on http://localhost:5000';
+      } else if (error.message.includes('500')) {
+        errorMessage = 'Backend server error. Please check the Flask server logs for details.';
+      }
+      
+      setError(errorMessage);
       
       toast({
         title: "Analysis Failed",
-        description: error.message || 'Backend server unavailable',
+        description: errorMessage,
         variant: "destructive",
       });
     } finally {
@@ -166,7 +177,6 @@ const PriceAnalysis = () => {
                 <div className="text-center">
                   <p className="text-red-400 text-lg font-semibold mb-2">Prediction Failed</p>
                   <p className="text-muted-foreground">{error}</p>
-                  <p className="text-muted-foreground text-sm mt-2">Please ensure the backend server is running and try again.</p>
                 </div>
               </CardContent>
             </Card>
@@ -258,7 +268,7 @@ const PriceAnalysis = () => {
                       className="w-full h-full rounded-lg"
                       frameBorder="0"
                       scrolling="no"
-                      allowtransparency="true"
+                      allowTransparency={true}
                     />
                   </div>
                 </CardContent>
