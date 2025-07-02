@@ -1,0 +1,122 @@
+
+@import url('https://fonts.googleapis.com/css2?family=Kumbh+Sans:wght@100..900&display=swap');
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Professional design system with specified colors */
+
+@layer base {
+  :root {
+    --background: 0 0% 100%;
+    --foreground: 224 71.4% 4.1%;
+
+    --card: 0 0% 100%;
+    --card-foreground: 224 71.4% 4.1%;
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 224 71.4% 4.1%;
+
+    --primary: 240 45% 64%;
+    --primary-foreground: 0 0% 98%;
+
+    --secondary: 262 22% 89%;
+    --secondary-foreground: 224 71.4% 4.1%;
+
+    --muted: 262 22% 89%;
+    --muted-foreground: 215.4 16.3% 46.9%;
+
+    --accent: 262 22% 89%;
+    --accent-foreground: 224 71.4% 4.1%;
+
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 210 40% 98%;
+
+    --border: 214.3 31.8% 91.4%;
+    --input: 214.3 31.8% 91.4%;
+    --ring: 240 45% 64%;
+
+    --radius: 0.5rem;
+
+    /* Custom brand colors */
+    --brand-primary: 240 45% 64%; /* #8B85C1 */
+    --brand-secondary: 262 22% 89%; /* #D4CDF4 */
+    --brand-accent: 357 96% 62%; /* #FB4B4E */
+    --brand-dark: 224 71.4% 4.1%;
+    --brand-gray: 215.4 16.3% 46.9%;
+  }
+
+  .dark {
+    --background: 224 71.4% 4.1%;
+    --foreground: 210 20% 98%;
+
+    --card: 224 71.4% 4.1%;
+    --card-foreground: 210 20% 98%;
+
+    --popover: 224 71.4% 4.1%;
+    --popover-foreground: 210 20% 98%;
+
+    --primary: 240 45% 64%;
+    --primary-foreground: 224 71.4% 4.1%;
+
+    --secondary: 215 27.9% 16.9%;
+    --secondary-foreground: 210 20% 98%;
+
+    --muted: 215 27.9% 16.9%;
+    --muted-foreground: 217.9 10.6% 64.9%;
+
+    --accent: 215 27.9% 16.9%;
+    --accent-foreground: 210 20% 98%;
+
+    --destructive: 0 62.8% 30.6%;
+    --destructive-foreground: 210 20% 98%;
+
+    --border: 215 27.9% 16.9%;
+    --input: 215 27.9% 16.9%;
+    --ring: 240 45% 64%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground font-kumbh;
+  }
+}
+
+@layer utilities {
+  .brand-primary {
+    @apply text-[hsl(var(--brand-primary))];
+  }
+  
+  .bg-brand-primary {
+    @apply bg-[hsl(var(--brand-primary))];
+  }
+  
+  .brand-secondary {
+    @apply text-[hsl(var(--brand-secondary))];
+  }
+  
+  .bg-brand-secondary {
+    @apply bg-[hsl(var(--brand-secondary))];
+  }
+  
+  .brand-accent {
+    @apply text-[hsl(var(--brand-accent))];
+  }
+  
+  .bg-brand-accent {
+    @apply bg-[hsl(var(--brand-accent))];
+  }
+  
+  .brand-dark {
+    @apply text-[hsl(var(--brand-dark))];
+  }
+  
+  .bg-brand-dark {
+    @apply bg-[hsl(var(--brand-dark))];
+  }
+}
