@@ -80,13 +80,17 @@ const SentimentAnalysis = () => {
       } else {
         throw new Error('No sentiment data available from Reddit API');
       }
-    } catch (error: any) {
+    } catch (error) {
       console.error('Error analyzing sentiment:', error);
-      setError(error.message || 'Failed to analyze sentiment. Please check if the backend server is running.');
+      const errorMessage =
+        error instanceof Error
+          ? error.message
+          : 'Failed to analyze sentiment. Please check if the backend server is running.';
+      setError(errorMessage);
       
       toast({
         title: "Analysis Failed",
-        description: error.message || 'Backend server unavailable',
+        description: errorMessage || 'Backend server unavailable',
         variant: "destructive",
       });
     } finally {
