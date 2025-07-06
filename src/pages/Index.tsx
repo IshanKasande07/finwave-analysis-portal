@@ -5,7 +5,6 @@ import { TrendingUp, BarChart3, MessageSquare, Activity, Shield, Users, Moon, Su
 import { useTheme } from "@/components/ThemeProvider";
 import NewsAnalysis from "@/components/NewsAnalysis";
 import PriceAnalysis from "@/components/PriceAnalysis";
-import SentimentAnalysis from "@/components/SentimentAnalysis";
 import LiveNewsFeed from "@/components/LiveNewsFeed";
 import Portfolio from "@/components/Portfolio";
 
@@ -23,8 +22,6 @@ const Index = () => {
         return <NewsAnalysis />;
       case "price":
         return <PriceAnalysis />;
-      case "sentiment":
-        return <SentimentAnalysis />;
       case "portfolio":
         return <Portfolio />;
       default:
@@ -49,7 +46,6 @@ const Index = () => {
                   <li><button onClick={() => setActiveSection("home")} className="text-muted-foreground hover:text-brand-primary transition-colors font-semibold text-base">Home</button></li>
                   <li><button onClick={() => setActiveSection("news")} className="text-muted-foreground hover:text-brand-primary transition-colors font-semibold text-base">News</button></li>
                   <li><button onClick={() => setActiveSection("price")} className="text-muted-foreground hover:text-brand-primary transition-colors font-semibold text-base">Price</button></li>
-                  <li><button onClick={() => setActiveSection("sentiment")} className="text-muted-foreground hover:text-brand-primary transition-colors font-semibold text-base">Sentiment</button></li>
                   <li><button onClick={() => setActiveSection("portfolio")} className="text-muted-foreground hover:text-brand-primary transition-colors font-semibold text-base">Portfolio</button></li>
                 </ul>
               </nav>
@@ -119,13 +115,13 @@ const HomePage = ({ setActiveSection }: { setActiveSection: (section: string) =>
               Price Analysis
             </Button>
             <Button 
-              onClick={() => setActiveSection("sentiment")} 
+              onClick={() => setActiveSection("portfolio")} 
               variant="outline"
               className="border-brand-primary text-brand-primary hover:bg-brand-primary hover:text-white px-8 py-4 text-lg font-bold"
               size="lg"
             >
-              <MessageSquare className="w-5 h-5 mr-2" />
-              Sentiment Analysis
+              <Users className="w-5 h-5 mr-2" />
+              Portfolio Management
             </Button>
           </div>
         </div>
@@ -236,5 +232,3 @@ const HomePage = ({ setActiveSection }: { setActiveSection: (section: string) =>
 };
 
 export default Index;
-
-
