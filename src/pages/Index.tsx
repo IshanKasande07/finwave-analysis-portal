@@ -236,3 +236,5 @@ const HomePage = ({ setActiveSection }: { setActiveSection: (section: string) =>
 };
 
 export default Index;
+
+

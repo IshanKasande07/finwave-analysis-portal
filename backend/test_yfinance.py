@@ -1,6 +1,6 @@
 import yfinance as yf
 
-ticker_symbol = "AAPL"
+ticker_symbol = "MSFT"
 ticker = yf.Ticker(ticker_symbol)
 
 try:
