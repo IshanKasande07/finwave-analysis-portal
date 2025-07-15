@@ -51,9 +51,9 @@ const PriceAnalysis = () => {
       console.log(`Response status: ${response.status}`);
 
       if (!response.ok) {
-        const errorText = await response.text();
-        console.error(`API request failed: ${response.status} - ${errorText}`);
-        throw new Error(`Server error: ${response.status}`);
+        const errorData = await response.json();
+        console.error(`API request failed: ${response.status} - ${errorData.error}`);
+        throw new Error(errorData.error || `Server error: ${response.status}`);
       }
 
       const data = await response.json();
@@ -69,7 +69,9 @@ const PriceAnalysis = () => {
       console.error("Error analyzing stock:", error);
       let errorMessage = "Failed to analyze stock. Please check if the backend server is running or try again later.";
       if (error instanceof Error) {
-        errorMessage = error.message;
+        errorMessage = error.message.includes("No data found")
+          ? `${error.message} Ensure the symbol is correct (e.g., TSLA, AAPL).`
+          : error.message;
       }
       setError(errorMessage);
       toast({
@@ -141,7 +143,13 @@ const PriceAnalysis = () => {
               <CardContent className="flex items-center justify-center py-8">
                 <div className="text-center">
                   <p className="text-red-400 text-lg font-semibold mb-2">Prediction Failed</p>
-                  <p className="text-muted-foreground">{error.includes("404") ? "No data available for this symbol. Try again later or check the symbol." : error}</p>
+                  <p className="text-muted-foreground">{error}</p>
+                  <Button 
+                    onClick={predictStock} 
+                    className="mt-4 bg-brand-accent hover:bg-brand-accent/90 text-white"
+                  >
+                    Retry
+                  </Button>
                 </div>
               </CardContent>
             </Card>
@@ -219,7 +227,7 @@ const PriceAnalysis = () => {
                   
                   <div className="aspect-video bg-muted rounded-lg flex items-center justify-center border border-border">
                     <iframe
-                      src={`https://s.tradingview.com/widgetembed/?symbol=${result.stock_symbol}&interval=${timeframe}&theme=dark&style=${chartType === 'candlestick' ? '1' : chartType === 'line' ? '2' : '3'}&toolbarbg=2B2B2B&timezone=exchange&withdateranges=1`}
+                      src={`https://s.tradingview.com/widgetembed/?symbol=${result.stock_symbol}&interval=${timeframe}&theme=light&style=${chartType === 'candlestick' ? '1' : chartType === 'line' ? '2' : '3'}&toolbarbg=2B2B2B&timezone=exchange&withdateranges=1`}
                       className="w-full h-full rounded-lg"
                       frameBorder="0"
                       scrolling="no"
@@ -237,5 +245,3 @@ const PriceAnalysis = () => {
 };
 
 export default PriceAnalysis;
-
-

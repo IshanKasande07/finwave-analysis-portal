@@ -5,7 +5,7 @@ import { useToast } from "@/hooks/use-toast";
 
 interface NewsItem {
   title: string;
-  description: string;
+  summary: string;
   url: string;
 }
 
@@ -19,32 +19,17 @@ const LiveNewsFeed = () => {
     setLoading(true);
     setError(null);
     try {
-      const response = await fetch("http://localhost:5000/api/news", {
-        method: "GET",
-        headers: { "Content-Type": "application/json" },
-      });
-      console.log(`Response status: ${response.status}`);
-      if (!response.ok) {
-        const errorText = await response.text();
-        console.error(`Failed to fetch news: ${response.status} - ${errorText}`);
-        throw new Error(`Server error: ${response.status}`);
+      const res = await fetch("http://localhost:5000/api/news");
+      if (!res.ok) {
+        const text = await res.text();
+        throw new Error(`Error ${res.status}: ${text}`);
       }
-      const data = await response.json();
-      console.log("Received news data:", data);
-      if (data.error) throw new Error(data.error);
+      const data = await res.json();
       setNews(data.news || []);
-    } catch (error: unknown) {
-      console.error("Error fetching news:", error);
-      let errorMessage = "Failed to load financial news feed.";
-      if (error instanceof Error) {
-        errorMessage = error.message;
-      }
-      setError(errorMessage);
-      toast({
-        title: "Error",
-        description: errorMessage,
-        variant: "destructive",
-      });
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : "Unknown error";
+      setError(msg);
+      toast({ title: "Error", description: msg, variant: "destructive" });
     } finally {
       setLoading(false);
     }
@@ -52,7 +37,7 @@ const LiveNewsFeed = () => {
 
   useEffect(() => {
     fetchNews();
-    const interval = setInterval(fetchNews, 1800000); // 30 minutes (within 100 requests/day limit)
+    const interval = setInterval(fetchNews, 1800000);
     return () => clearInterval(interval);
   }, []);
 
@@ -64,7 +49,7 @@ const LiveNewsFeed = () => {
           Global Financial News
         </CardTitle>
         <CardDescription className="text-muted-foreground">
-          Latest updates from financial markets
+          Latest updates from financial markets (via Gemini)
         </CardDescription>
       </CardHeader>
       <CardContent>
@@ -86,7 +71,7 @@ const LiveNewsFeed = () => {
                 <a href={item.url} target="_blank" rel="noopener noreferrer" className="text-foreground hover:underline">
                   <p className="font-semibold">{item.title}</p>
                 </a>
-                <p className="text-muted-foreground text-sm mt-1">{item.description}</p>
+                <p className="text-muted-foreground text-sm mt-1">{item.summary}</p>
               </div>
             ))}
           </div>
@@ -97,4 +82,3 @@ const LiveNewsFeed = () => {
 };
 
 export default LiveNewsFeed;
-
